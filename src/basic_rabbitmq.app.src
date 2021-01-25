@@ -1,0 +1,16 @@
+{application, basic_rabbitmq,
+ [{description, "An OTP application"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, {basic_rabbitmq_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+    rabbit_common
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {licenses, ["Apache 2.0"]},
+  {links, []}
+ ]}.
