@@ -1,9 +1,15 @@
 basic_rabbitmq
 =====
 
-An OTP application
+An OTP application with basic connectivity to RabbitMQ.
 
-Build
+Build/Run
 -----
-
-    $ rebar3 compile
+1) Make sure RabbitMQ is running locally. You can check via:
+```
+   http://localhost:15672
+```
+2)
+```
+    $ rebar3 compile; rebar3 shell
+```

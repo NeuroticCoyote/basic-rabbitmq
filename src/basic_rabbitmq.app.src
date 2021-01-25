@@ -5,12 +5,11 @@
   {mod, {basic_rabbitmq_app, []}},
   {applications,
    [kernel,
-    stdlib,
-    rabbit_common
+    stdlib
    ]},
   {env,[]},
   {modules, []},
 
-  {licenses, ["Apache 2.0"]},
+  {licenses, []},
   {links, []}
  ]}.

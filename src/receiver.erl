@@ -1,6 +1,6 @@
 %%%-------------------------------------------------------------------
 %%% @author joegoodwin
-%%% @copyright (C) 2021, <COMPANY>
+%%% @copyright (C) 2021
 %%% @doc
 %%%
 %%% @end
@@ -8,22 +8,26 @@
 %%%-------------------------------------------------------------------
 -module(receiver).
 -author("joegoodwin").
--include_lib("/Users/joegoodwin/git/basic-rabbitmq/_build/default/lib/amqp_client/include/amqp_client.hrl").
+-include_lib("amqp_client/include/amqp_client.hrl").
 
 -behaviour(gen_server).
 
 %% API
--export([start_link/2]).
+-export([start_link/2,
+	subscribe/1]).
 
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
+-export([init/1,
+	handle_call/3,
+	handle_cast/2,
+	handle_info/2,
+	terminate/2,
 	code_change/3]).
 
 -define(SERVER, ?MODULE).
+-define(DEFAULT_QUEUE, <<"basic_rabbitmq_queue">>).
 
--define(QUEUE_NAME, <<"basic_rabbitmq_queue">>).
-
--record(client_state, {connection, channel}).
+-record(receiver_state, {connection, channel}).
 
 %%%===================================================================
 %%% API
@@ -32,23 +36,27 @@
 start_link(Connection, Channel) ->
 	gen_server:start_link({local, ?SERVER}, ?MODULE, [Connection, Channel], []).
 
+subscribe(QueueName) ->
+	gen_server:call(?SERVER, {subscribe, QueueName}).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
 init([Connection, Channel]) ->
-	Method = #'basic.consume'{queue = ?QUEUE_NAME, no_ack = true},
-	amqp_channel:subscribe(Channel, Method, self()),
-	{ok, #client_state{connection = Connection, channel = Channel}}.
+	subscribe(Channel, ?DEFAULT_QUEUE),
+	{ok, #receiver_state{connection = Connection, channel = Channel}}.
 
-handle_call(_Request, _From, State = #client_state{}) ->
+handle_call({subscribe, QueueName}, _From, State = #receiver_state{channel = Channel}) ->
+	subscribe(Channel, QueueName),
+	{reply, ok, State};
+handle_call(_Request, _From, State) ->
 	{reply, ok, State}.
 
-handle_cast(_Request, State = #client_state{}) ->
+handle_cast(_Request, State) ->
 	{noreply, State}.
 
-handle_info(Info, State = #client_state{}) ->
+handle_info(Info, State = #receiver_state{}) ->
 	case Info of
 		#'basic.consume_ok'{} ->
 			io:format(" [x] Saw basic.consume_ok~n"),
@@ -62,9 +70,19 @@ handle_info(Info, State = #client_state{}) ->
 terminate(_Reason, _State) ->
 	ok.
 
-code_change(_OldVsn, State = #client_state{}, _Extra) ->
+code_change(_OldVsn, State, _Extra) ->
 	{ok, State}.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+subscribe(Channel, Queue) ->
+	BinaryQueue = sender:to_binary(Queue),
+	Method = #'basic.consume'{queue = BinaryQueue, no_ack = true},
+	try
+		amqp_channel:subscribe(Channel, Method, self())
+	catch
+		E:_R ->
+			io:format("Error subscribing to queue ~p, since it hasnt been created. Error: ~p", [BinaryQueue, E])
+	end.

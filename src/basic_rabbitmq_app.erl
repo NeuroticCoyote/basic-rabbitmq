@@ -4,11 +4,9 @@
 %%%-------------------------------------------------------------------
 
 -module(basic_rabbitmq_app).
-
 -behaviour(application).
 
--include_lib("/Users/joegoodwin/git/basic-rabbitmq/_build/default/lib/amqp_client/include/amqp_client.hrl").
-
+-include_lib("amqp_client/include/amqp_client.hrl").
 
 -export([start/2, stop/1]).
 
